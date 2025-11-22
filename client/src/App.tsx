@@ -17,6 +17,11 @@ interface DevicePreset {
   isDefault: boolean;
 }
 
+interface Font {
+  id: string;
+  name: string;
+}
+
 function App() {
   // State
   const [verse, setVerse] = useState('');
@@ -25,9 +30,10 @@ function App() {
   const [selectedBackground, setSelectedBackground] = useState<string>('');
   const [devicePresets, setDevicePresets] = useState<DevicePreset[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
-  const [fontSizeAdjustment, setFontSizeAdjustment] = useState(0);
+  const [fonts, setFonts] = useState<Font[]>([]);
+  const [selectedFont, setSelectedFont] = useState<string>('dejavu-serif');
+  const [fontSize, setFontSize] = useState<number | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
-  const [currentFontSize, setCurrentFontSize] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,12 +42,14 @@ function App() {
     Promise.all([
       fetch(`${API_BASE}/api/backgrounds`).then(r => r.json()),
       fetch(`${API_BASE}/api/device-presets`).then(r => r.json()),
-    ]).then(([bgs, presets]) => {
+      fetch(`${API_BASE}/api/fonts`).then(r => r.json()),
+    ]).then(([bgs, presets, availableFonts]) => {
       setBackgrounds(bgs);
       if (bgs.length > 0) setSelectedBackground(bgs[0].id);
       setDevicePresets(presets);
       const defaultPreset = presets.find((p: DevicePreset) => p.isDefault);
       if (defaultPreset) setSelectedPreset(defaultPreset.id);
+      setFonts(availableFonts);
     }).catch(err => {
       setError('Failed to load data. Make sure the server is running.');
       console.error(err);
@@ -52,8 +60,16 @@ function App() {
   const charCount = verse.length;
   const isValidLength = charCount >= 10 && charCount <= 500;
 
+  // Auto-regenerate when font changes
+  useEffect(() => {
+    if (generatedImage && selectedFont) {
+      handleGenerate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFont]);
+
   // Generate image
-  const handleGenerate = async (overrideFontSizeAdjustment?: number) => {
+  const handleGenerate = async (customFontSize?: number) => {
     if (!isValidLength) {
       setError('Verse must be between 10 and 500 characters');
       return;
@@ -62,22 +78,26 @@ function App() {
     setLoading(true);
     setError(null);
 
-    // Only use override if it's actually a number (not an event object)
-    const adjustmentToUse = typeof overrideFontSizeAdjustment === 'number'
-      ? overrideFontSizeAdjustment
-      : fontSizeAdjustment;
+    const fontSizeToUse = customFontSize !== undefined ? customFontSize : fontSize;
+
+    const requestBody: any = {
+      verse,
+      reference,
+      backgroundId: selectedBackground,
+      devicePreset: selectedPreset,
+      fontFamily: selectedFont,
+    };
+
+    // Only include fontSize if it's explicitly set
+    if (fontSizeToUse !== null && fontSizeToUse !== undefined) {
+      requestBody.fontSize = fontSizeToUse;
+    }
 
     try {
       const response = await fetch(`${API_BASE}/api/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          verse,
-          reference,
-          backgroundId: selectedBackground,
-          devicePreset: selectedPreset,
-          fontSizeAdjustment: adjustmentToUse,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -87,7 +107,7 @@ function App() {
 
       const data = await response.json();
       setGeneratedImage(data.image);
-      setCurrentFontSize(data.fontSize);
+      setFontSize(data.fontSize);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate image');
     } finally {
@@ -97,10 +117,10 @@ function App() {
 
   // Adjust font size and regenerate
   const adjustFontSize = (delta: number) => {
-    const newAdjustment = fontSizeAdjustment + delta;
-    setFontSizeAdjustment(newAdjustment);
-    // Immediately regenerate with the new adjustment value
-    handleGenerate(newAdjustment);
+    if (fontSize === null) return;
+    const newSize = fontSize + delta;
+    setFontSize(newSize);
+    handleGenerate(newSize);
   };
 
   // Regenerate with current font size
@@ -227,7 +247,7 @@ function App() {
         {/* Generate Button */}
         <div className="flex justify-center mb-12">
           <button
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={loading || !isValidLength}
             className="px-8 py-4 bg-primary hover:bg-primary-hover text-navy font-semibold rounded-lg transition-colors disabled:bg-stone-light disabled:text-stone disabled:cursor-not-allowed flex items-center gap-2"
           >
@@ -256,24 +276,59 @@ function App() {
                 />
               </div>
 
-              {/* Font Size Controls */}
-              <div className="flex items-center gap-4 mt-6">
-                <button
-                  onClick={() => adjustFontSize(-5)}
-                  className="w-11 h-11 flex items-center justify-center border border-stone-light rounded-lg hover:border-teal hover:text-teal transition-colors"
-                >
-                  <Minus className="w-5 h-5" />
-                </button>
-                <span className="text-sm font-medium text-charcoal min-w-[80px] text-center">
-                  {fontSizeAdjustment >= 0 ? '+' : ''}{fontSizeAdjustment}%
-                  {currentFontSize && <span className="block text-xs text-stone">({currentFontSize}px)</span>}
-                </span>
-                <button
-                  onClick={() => adjustFontSize(5)}
-                  className="w-11 h-11 flex items-center justify-center border border-stone-light rounded-lg hover:border-teal hover:text-teal transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
+              {/* Font and Size Controls */}
+              <div className="flex flex-col items-center gap-4 mt-6">
+                {/* Font Selector */}
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-charcoal">Font:</label>
+                  <select
+                    value={selectedFont}
+                    onChange={(e) => setSelectedFont(e.target.value)}
+                    className="px-4 py-2 border border-stone-light rounded-lg text-navy bg-surface focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal-light cursor-pointer"
+                  >
+                    {fonts.map((font) => (
+                      <option key={font.id} value={font.id}>
+                        {font.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Font Size Controls */}
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => adjustFontSize(-5)}
+                    className="w-11 h-11 flex items-center justify-center border border-stone-light rounded-lg hover:border-teal hover:text-teal transition-colors"
+                  >
+                    <Minus className="w-5 h-5" />
+                  </button>
+                  <div className="flex flex-col items-center gap-1">
+                    <input
+                      type="number"
+                      value={fontSize || ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val) && val > 0) {
+                          setFontSize(val);
+                          handleGenerate(val);
+                        }
+                      }}
+                      className="w-20 px-2 py-1 text-center border border-stone-light rounded text-sm text-navy focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal-light [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      placeholder="72"
+                      min="10"
+                      max="200"
+                    />
+                    <span className="text-xs text-stone">
+                      pixels
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => adjustFontSize(5)}
+                    className="w-11 h-11 flex items-center justify-center border border-stone-light rounded-lg hover:border-teal hover:text-teal transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Action Buttons */}

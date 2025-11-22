@@ -5,15 +5,9 @@ const fs = require('fs');
 const satori = require('satori').default;
 const { Resvg } = require('@resvg/resvg-js');
 const sharp = require('sharp');
-const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const PORT = 3001;
-
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY
-});
 
 app.use(cors());
 app.use(express.json());
@@ -26,56 +20,98 @@ const devicePresets = [
   { id: 'samsung-galaxy', name: 'Samsung Galaxy', width: 1440, height: 3088, isDefault: false },
 ];
 
-// Load font once at startup
-let fontData = null;
+// Available fonts (curated list - mostly serif for scripture)
+const AVAILABLE_FONTS = [
+  {
+    id: 'dejavu-serif',
+    name: 'DejaVu Serif',
+    paths: [
+      '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf',
+      '/usr/share/fonts/TTF/DejaVuSerif.ttf',
+    ]
+  },
+  {
+    id: 'dejavu-sans',
+    name: 'DejaVu Sans',
+    paths: [
+      '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+      '/usr/share/fonts/TTF/DejaVuSans.ttf',
+    ]
+  },
+  {
+    id: 'liberation-serif',
+    name: 'Liberation Serif',
+    paths: [
+      '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
+      '/usr/share/fonts/liberation/LiberationSerif-Regular.ttf',
+    ]
+  },
+  {
+    id: 'free-serif',
+    name: 'Free Serif',
+    paths: [
+      '/usr/share/fonts/truetype/freefont/FreeSerif.ttf',
+    ]
+  },
+  {
+    id: 'noto-serif',
+    name: 'Noto Serif',
+    paths: [
+      '/usr/share/fonts/truetype/noto/NotoSerif-Regular.ttf',
+    ]
+  },
+  {
+    id: 'noto-serif-display',
+    name: 'Noto Serif Display',
+    paths: [
+      '/usr/share/fonts/truetype/noto/NotoSerifDisplay-Regular.ttf',
+    ]
+  },
+];
 
-async function loadFont() {
-  // Try to load a system font or bundled font
-  const fontPaths = [
-    '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf',
-    '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
-    '/usr/share/fonts/TTF/DejaVuSerif.ttf',
-    path.join(__dirname, '../public/fonts/Georgia.ttf'),
-  ];
+// Font cache
+const fontCache = new Map();
 
-  for (const fontPath of fontPaths) {
+// Load a specific font by ID
+function loadFontById(fontId) {
+  // Check cache first
+  if (fontCache.has(fontId)) {
+    return fontCache.get(fontId);
+  }
+
+  // Find font config
+  const fontConfig = AVAILABLE_FONTS.find(f => f.id === fontId);
+  if (!fontConfig) {
+    throw new Error(`Font ${fontId} not found`);
+  }
+
+  // Try each path
+  for (const fontPath of fontConfig.paths) {
     try {
       if (fs.existsSync(fontPath)) {
-        fontData = fs.readFileSync(fontPath);
-        console.log(`Loaded font from: ${fontPath}`);
-        return;
+        const data = fs.readFileSync(fontPath);
+        fontCache.set(fontId, data);
+        console.log(`Loaded font ${fontId} from: ${fontPath}`);
+        return data;
       }
     } catch (e) {
       continue;
     }
   }
 
-  // Fallback: download a free font
-  console.log('No system font found, using Inter from CDN');
-  const https = require('https');
-  const fontUrl = 'https://github.com/rsms/inter/raw/master/docs/font-files/Inter-Regular.otf';
+  throw new Error(`Could not load font ${fontId} from any path`);
+}
 
-  return new Promise((resolve, reject) => {
-    https.get(fontUrl, (response) => {
-      if (response.statusCode === 302 || response.statusCode === 301) {
-        https.get(response.headers.location, (res) => {
-          const chunks = [];
-          res.on('data', chunk => chunks.push(chunk));
-          res.on('end', () => {
-            fontData = Buffer.concat(chunks);
-            resolve();
-          });
-        });
-      } else {
-        const chunks = [];
-        response.on('data', chunk => chunks.push(chunk));
-        response.on('end', () => {
-          fontData = Buffer.concat(chunks);
-          resolve();
-        });
-      }
-    }).on('error', reject);
-  });
+// Load default font at startup
+let fontData = null;
+
+async function loadFont() {
+  try {
+    fontData = loadFontById('dejavu-serif');
+  } catch (e) {
+    console.error('Failed to load default font:', e.message);
+    throw e;
+  }
 }
 
 // Get backgrounds list
@@ -98,79 +134,33 @@ app.get('/api/device-presets', (req, res) => {
   res.json(devicePresets);
 });
 
-// AI text sizing using Claude Haiku
-async function getOptimalFontSize(verseText, reference, width, height) {
-  const safeWidth = width * 0.8;
-  const targetHeight = height / 3; // Middle third of screen
+// Get available fonts
+app.get('/api/fonts', (req, res) => {
+  const fonts = AVAILABLE_FONTS.map(f => ({
+    id: f.id,
+    name: f.name
+  }));
+  res.json(fonts);
+});
+
+// Deterministic font size calculator
+function calculateFontSize(verseText) {
   const charCount = verseText.length;
-  const wordCount = verseText.split(/\s+/).length;
 
-  try {
-    console.log('Calling AI for font size...');
-    const response = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 100,
-      messages: [{
-        role: 'user',
-        content: `Calculate font size in pixels for a lock screen.
-
-Screen: ${width}x${height}px
-Text area width: ${safeWidth}px (middle 80%)
-Target text height: ${targetHeight}px (middle third of screen)
-Text: "${verseText}" (${charCount} chars, ${wordCount} words)
-Line height: 1.4
-
-GOAL: Text should FILL the middle third area. Choose a LARGE font that fits.
-- Short text (<100 chars): 80-100px
-- Medium text (100-200 chars): 60-80px
-- Long text (>200 chars): 48-60px
-
-Return ONLY an integer (font size in pixels).`
-      }]
-    });
-
-    const rawResponse = response.content[0].text.trim();
-    console.log('AI raw response:', rawResponse);
-
-    // Extract first number from response
-    const match = rawResponse.match(/\d+/);
-    const fontSize = match ? parseInt(match[0], 10) : null;
-    console.log('AI parsed font size:', fontSize);
-
-    if (!fontSize || isNaN(fontSize)) {
-      console.log('AI returned invalid, using fallback');
-      if (charCount < 100) return 90;
-      if (charCount < 150) return 78;
-      if (charCount < 200) return 66;
-      if (charCount < 300) return 54;
-      return 44;
-    }
-
-    // Apply multiplier based on text length (less aggressive for long text)
-    let multiplier = 1.5;
-    if (charCount > 400) multiplier = 1.0;      // Very long - trust AI
-    else if (charCount > 300) multiplier = 1.1; // Long
-    else if (charCount > 200) multiplier = 1.25; // Medium-long
-
-    const adjustedSize = Math.round(fontSize * multiplier);
-    const finalSize = Math.min(Math.max(adjustedSize, 36), 120);
-    console.log('Final adjusted size:', finalSize, '(multiplier:', multiplier, ')');
-    return finalSize;
-  } catch (error) {
-    console.error('AI sizing error, using fallback:', error.message);
-    // Fallback algorithm
-    if (charCount < 100) return 90;
-    if (charCount < 150) return 78;
-    if (charCount < 200) return 66;
-    if (charCount < 300) return 54;
-    return 44;
-  }
+  // Start at 105px for short verses, scale down for longer ones
+  if (charCount < 100) return 105;
+  if (charCount < 150) return 88;
+  if (charCount < 200) return 74;
+  if (charCount < 250) return 64;
+  if (charCount < 300) return 56;
+  if (charCount < 400) return 48;
+  return 42;
 }
 
 // Generate image
 app.post('/api/generate', async (req, res) => {
   try {
-    const { verse, reference, backgroundId, devicePreset, fontSizeAdjustment = 0 } = req.body;
+    const { verse, reference, backgroundId, devicePreset, fontSize, fontFamily = 'dejavu-serif' } = req.body;
 
     // Validate input
     if (!verse || verse.length < 10 || verse.length > 500) {
@@ -188,10 +178,12 @@ app.post('/api/generate', async (req, res) => {
     const bgFile = files[bgIndex] || files[0];
     const bgPath = path.join(backgroundsDir, bgFile);
 
-    // Get optimal font size from AI
-    const baseFontSize = await getOptimalFontSize(verse, reference, width, height);
-    const adjustedFontSize = Math.round(baseFontSize * (1 + fontSizeAdjustment / 100));
-    const referenceFontSize = Math.round(adjustedFontSize * 0.65);
+    // Load selected font
+    const selectedFontData = loadFontById(fontFamily);
+
+    // Use provided font size or calculate default
+    const verseFontSize = fontSize !== undefined && fontSize !== null ? fontSize : calculateFontSize(verse);
+    const referenceFontSize = Math.round(verseFontSize * 0.68);
 
     // Create text overlay using Satori
     const svg = await satori(
@@ -212,7 +204,7 @@ app.post('/api/generate', async (req, res) => {
               type: 'div',
               props: {
                 style: {
-                  fontSize: adjustedFontSize,
+                  fontSize: verseFontSize,
                   color: 'white',
                   textAlign: 'center',
                   lineHeight: 1.4,
@@ -247,7 +239,7 @@ app.post('/api/generate', async (req, res) => {
         fonts: [
           {
             name: 'Serif',
-            data: fontData,
+            data: selectedFontData,
             weight: 400,
             style: 'normal',
           },
@@ -289,7 +281,7 @@ app.post('/api/generate', async (req, res) => {
     // Send as base64 for preview
     res.json({
       image: `data:image/png;base64,${background.toString('base64')}`,
-      fontSize: adjustedFontSize,
+      fontSize: verseFontSize,
     });
 
   } catch (error) {
