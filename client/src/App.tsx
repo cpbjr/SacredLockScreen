@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Minus, Plus, Download, RefreshCw, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
-import { LightRays } from './components/LightRays';
 import { FloatingParticles } from './components/FloatingParticles';
 import { GoldenAccent } from './components/GoldenAccent';
 
