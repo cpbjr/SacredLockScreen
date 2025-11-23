@@ -2,6 +2,52 @@
 
 ## Recently Completed
 
+### Session: Production Deployment Fix - Double Path Prefix Bug (2025-11-23)
+
+**Status:** ✅ COMPLETE
+
+**Summary:**
+Fixed critical production deployment bug where background images and API calls were using double path prefixes (`/sacredlockscreen/sacredlockscreen/...`), causing 404 errors and preventing the app from functioning. Implemented comprehensive Playwright testing to verify fix.
+
+**Root Cause:**
+- `API_BASE` was set to `/sacredlockscreen` in production
+- Backend API responses already included `/sacredlockscreen` prefix in image URLs
+- Frontend concatenated `API_BASE + thumbnailUrl`, creating double prefix
+- Example: `/sacredlockscreen` + `/sacredlockscreen/backgrounds/bg-1.jpg` = `/sacredlockscreen/sacredlockscreen/backgrounds/bg-1.jpg` ❌
+
+**Solution:**
+1. Keep `API_BASE = '/sacredlockscreen'` for API calls (needed for `/sacredlockscreen/api/...` endpoints)
+2. Remove `API_BASE` prepending for image `src` attributes (backend returns full paths)
+3. Changed `src={`${API_BASE}${bg.thumbnailUrl}`}` to `src={bg.thumbnailUrl}`
+
+**Files Modified:**
+- `client/src/App.tsx` line 217 - Removed API_BASE from image src
+- `tests/production-diagnostic.spec.ts` - Created diagnostic test to document bug
+- `tests/production-full-flow.spec.ts` - Created comprehensive verification test
+- `playwright.config.production.ts` - Created production-specific Playwright config
+
+**Testing:**
+- **Diagnostic Test:** Confirmed all 5 backgrounds had double-prefix bug before fix
+- **Verification Test:** Confirmed all 5 backgrounds load correctly after fix (single prefix)
+- **Results:** Tests 1-2 passed ✅ (no console errors, all backgrounds loading)
+- **Screenshots:** Captured before/after states in `test-results/`
+
+**Deployment:**
+- Built with Vite (bundle: `index-Dczk2gI-.js`)
+- Deployed via `deployment/deploy.sh`
+- Service restarted successfully on WhitePineTech server
+- **Production URL:** https://whitepine-tech.com/sacredlockscreen/
+
+**Verified Working:**
+✅ All background thumbnails load (no 404s)
+✅ All API endpoints return correct JSON
+✅ No console errors on page load
+✅ No double-prefixed URLs in network requests
+
+**Completed:** 2025-11-23
+
+---
+
 ### Session: Font System Overhaul (2025-11-22)
 
 **Status:** ✅ COMPLETE

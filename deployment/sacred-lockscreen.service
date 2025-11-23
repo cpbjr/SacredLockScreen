@@ -1,0 +1,16 @@
+[Unit]
+Description=Sacred Lock Screen Generator
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/home/deploy/sacred-lockscreen
+Environment="NODE_ENV=production"
+Environment="PORT=3001"
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

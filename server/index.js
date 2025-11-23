@@ -11,7 +11,12 @@ const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
-app.use('/backgrounds', express.static(path.join(__dirname, '../public/backgrounds')));
+app.use('/sacredlockscreen/backgrounds', express.static(path.join(__dirname, '../public/backgrounds')));
+
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  app.use('/sacredlockscreen', express.static(path.join(__dirname, '../client/dist')));
+}
 
 // Device presets (hardcoded for MVP)
 const devicePresets = [
@@ -115,27 +120,27 @@ async function loadFont() {
 }
 
 // Get backgrounds list
-app.get('/api/backgrounds', (req, res) => {
+app.get('/sacredlockscreen/api/backgrounds', (req, res) => {
   const backgroundsDir = path.join(__dirname, '../public/backgrounds');
   const files = fs.readdirSync(backgroundsDir).filter(f => /\.(jpg|jpeg|png)$/i.test(f));
 
   const backgrounds = files.map((filename, index) => ({
     id: `bg-${index + 1}`,
     filename,
-    thumbnailUrl: `/backgrounds/${filename}`,
-    fullUrl: `/backgrounds/${filename}`,
+    thumbnailUrl: `/sacredlockscreen/backgrounds/${filename}`,
+    fullUrl: `/sacredlockscreen/backgrounds/${filename}`,
   }));
 
   res.json(backgrounds);
 });
 
 // Get device presets
-app.get('/api/device-presets', (req, res) => {
+app.get('/sacredlockscreen/api/device-presets', (req, res) => {
   res.json(devicePresets);
 });
 
 // Get available fonts
-app.get('/api/fonts', (req, res) => {
+app.get('/sacredlockscreen/api/fonts', (req, res) => {
   const fonts = AVAILABLE_FONTS.map(f => ({
     id: f.id,
     name: f.name
@@ -158,7 +163,7 @@ function calculateFontSize(verseText) {
 }
 
 // Generate image
-app.post('/api/generate', async (req, res) => {
+app.post('/sacredlockscreen/api/generate', async (req, res) => {
   try {
     const { verse, reference, backgroundId, devicePreset, fontSize, fontFamily = 'dejavu-serif' } = req.body;
 
@@ -289,6 +294,13 @@ app.post('/api/generate', async (req, res) => {
     res.status(500).json({ error: 'Failed to generate image: ' + error.message });
   }
 });
+
+// Serve index.html for all other routes under /sacredlockscreen (SPA support)
+if (process.env.NODE_ENV === 'production') {
+  app.get('/sacredlockscreen/*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 // Start server
 async function start() {

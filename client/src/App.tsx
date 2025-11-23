@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Minus, Plus, Download, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
-const API_BASE = 'http://localhost:3001';
+// API_BASE is for API calls only - image URLs from backend already include full path
+const API_BASE = import.meta.env.MODE === 'production' ? '/sacredlockscreen' : 'http://localhost:3001';
 
 interface Background {
   id: string;
@@ -213,7 +214,7 @@ function App() {
                 }`}
               >
                 <img
-                  src={`${API_BASE}${bg.thumbnailUrl}`}
+                  src={bg.thumbnailUrl}
                   alt={bg.filename}
                   className="w-full h-full object-cover"
                 />
