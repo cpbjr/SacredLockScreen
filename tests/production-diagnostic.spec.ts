@@ -67,7 +67,7 @@ test.describe('Sacred Lock Screen - Production Diagnostic (Before Fix)', () => {
 
     // Attempt to fill form
     await page.fill('textarea[placeholder*="verse"]', 'For God so loved the world');
-    await page.fill('input[placeholder*="reference"]', 'John 3:16');
+    await page.fill('input[placeholder*="John"]', 'John 3:16');
 
     // Try to select a background (might not work if images broken)
     try {

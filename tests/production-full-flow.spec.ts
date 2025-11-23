@@ -66,18 +66,18 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   });
 
   test('Test 3: Form Inputs - All fields present', async ({ page }) => {
-    // Check all form elements exist
+    // Check all form elements exist (before generation)
     const verseTextarea = page.locator('textarea[placeholder*="verse"]');
     await expect(verseTextarea).toBeVisible();
 
-    const referenceInput = page.locator('input[placeholder*="reference"]');
+    const referenceInput = page.locator('input[placeholder*="John"]');
     await expect(referenceInput).toBeVisible();
 
     const deviceSelect = page.locator('select').first();
     await expect(deviceSelect).toBeVisible();
 
-    const fontSelect = page.locator('select').nth(1);
-    await expect(fontSelect).toBeVisible();
+    const generateButton = page.locator('button:has-text("Generate")');
+    await expect(generateButton).toBeVisible();
 
     console.log('✓ All form inputs present');
     expect(consoleErrors).toHaveLength(0);
@@ -87,7 +87,7 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
     // Fill form
     await page.fill('textarea[placeholder*="verse"]',
       'For God so loved the world that he gave his only Son, that whoever believes in him should not perish but have eternal life.');
-    await page.fill('input[placeholder*="reference"]', 'John 3:16');
+    await page.fill('input[placeholder*="John"]', 'John 3:16');
 
     // Select background
     const backgroundImages = page.locator('img[alt*="bg-"]');
@@ -100,7 +100,7 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
     await generateButton.click();
 
     // Wait for preview to appear (max 15 seconds)
-    const previewImage = page.locator('img[alt="Preview"]');
+    const previewImage = page.locator('img[alt="Generated lock screen"]');
     await expect(previewImage).toBeVisible({ timeout: 15000 });
 
     // Verify image has base64 data
@@ -115,11 +115,11 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   test('Test 5: Preview & Adjust - Font Size Increase', async ({ page }) => {
     // Generate initial image first
     await page.fill('textarea[placeholder*="verse"]', 'Be still and know that I am God');
-    await page.fill('input[placeholder*="reference"]', 'Psalm 46:10');
+    await page.fill('input[placeholder*="John"]', 'Psalm 46:10');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
     // Get initial font size
     const fontSizeInput = page.locator('input[type="number"]');
@@ -127,7 +127,7 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
     console.log('Initial font size:', initialSize);
 
     // Get initial image src
-    const previewImage = page.locator('img[alt="Preview"]');
+    const previewImage = page.locator('img[alt="Generated lock screen"]');
     const initialSrc = await previewImage.getAttribute('src');
 
     // Click + button
@@ -152,15 +152,15 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   test('Test 6: Preview & Adjust - Font Size Decrease', async ({ page }) => {
     // Generate initial image
     await page.fill('textarea[placeholder*="verse"]', 'The Lord is my shepherd');
-    await page.fill('input[placeholder*="reference"]', 'Psalm 23:1');
+    await page.fill('input[placeholder*="John"]', 'Psalm 23:1');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
     const fontSizeInput = page.locator('input[type="number"]');
     const initialSize = await fontSizeInput.inputValue();
-    const previewImage = page.locator('img[alt="Preview"]');
+    const previewImage = page.locator('img[alt="Generated lock screen"]');
     const initialSrc = await previewImage.getAttribute('src');
 
     // Click - button twice
@@ -187,14 +187,14 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   test('Test 7: Preview & Adjust - Direct Font Size Input', async ({ page }) => {
     // Generate initial image
     await page.fill('textarea[placeholder*="verse"]', 'I can do all things through Christ');
-    await page.fill('input[placeholder*="reference"]', 'Philippians 4:13');
+    await page.fill('input[placeholder*="John"]', 'Philippians 4:13');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
     const fontSizeInput = page.locator('input[type="number"]');
-    const previewImage = page.locator('img[alt="Preview"]');
+    const previewImage = page.locator('img[alt="Generated lock screen"]');
     const initialSrc = await previewImage.getAttribute('src');
 
     // Clear and type new font size
@@ -220,13 +220,13 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   test('Test 8: Preview & Adjust - Font Family Change', async ({ page }) => {
     // Generate initial image
     await page.fill('textarea[placeholder*="verse"]', 'Love is patient, love is kind');
-    await page.fill('input[placeholder*="reference"]', '1 Corinthians 13:4');
+    await page.fill('input[placeholder*="John"]', '1 Corinthians 13:4');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
-    const previewImage = page.locator('img[alt="Preview"]');
+    const previewImage = page.locator('img[alt="Generated lock screen"]');
     const initialSrc = await previewImage.getAttribute('src');
 
     // Change font
@@ -250,13 +250,13 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   test('Test 9: Preview & Adjust - Multiple Changes in Sequence', async ({ page }) => {
     // Generate initial image
     await page.fill('textarea[placeholder*="verse"]', 'Trust in the Lord with all your heart');
-    await page.fill('input[placeholder*="reference"]', 'Proverbs 3:5');
+    await page.fill('input[placeholder*="John"]', 'Proverbs 3:5');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
-    const previewImage = page.locator('img[alt="Preview"]');
+    const previewImage = page.locator('img[alt="Generated lock screen"]');
     let previousSrc = await previewImage.getAttribute('src');
 
     // Change 1: Font family
@@ -300,11 +300,11 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
   test('Test 10: Download Functionality', async ({ page }) => {
     // Generate image first
     await page.fill('textarea[placeholder*="verse"]', 'Rejoice in the Lord always');
-    await page.fill('input[placeholder*="reference"]', 'Philippians 4:4');
+    await page.fill('input[placeholder*="John"]', 'Philippians 4:4');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
     // Set up download listener
     const downloadPromise = page.waitForEvent('download');
@@ -345,11 +345,11 @@ test.describe('Sacred Lock Screen - Production Verification (After Fix)', () => 
 
     // Fill and generate to trigger generate API
     await page.fill('textarea[placeholder*="verse"]', 'God is love');
-    await page.fill('input[placeholder*="reference"]', '1 John 4:8');
+    await page.fill('input[placeholder*="John"]', '1 John 4:8');
     const backgroundImages = page.locator('img[alt*="bg-"]');
     await backgroundImages.first().click();
     await page.locator('button:has-text("Generate")').click();
-    await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('img[alt="Generated lock screen"]')).toBeVisible({ timeout: 15000 });
 
     // Verify all API calls succeeded
     console.log('\n=== API CALLS VERIFICATION ===');
