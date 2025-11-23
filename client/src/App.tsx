@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Minus, Plus, Download, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 
 // API_BASE is for API calls only - image URLs from backend already include full path
-const API_BASE = import.meta.env.MODE === 'production' ? '/sacredlockscreen' : 'http://localhost:3001';
+// In development, use '' so Vite proxy handles the API requests
+const API_BASE = import.meta.env.MODE === 'production' ? '/sacredlockscreen' : '';
 
 interface Background {
   id: string;
@@ -61,13 +62,18 @@ function App() {
   const charCount = verse.length;
   const isValidLength = charCount >= 10 && charCount <= 500;
 
-  // Auto-regenerate when font changes
+  // Debounced auto-regenerate when font or size changes
   useEffect(() => {
-    if (generatedImage && selectedFont) {
+    if (!generatedImage) return;
+
+    // Debounce: wait 500ms after last change before regenerating
+    const timeoutId = setTimeout(() => {
       handleGenerate();
-    }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedFont]);
+  }, [selectedFont, fontSize]);
 
   // Generate image
   const handleGenerate = async (customFontSize?: number) => {
@@ -286,9 +292,14 @@ function App() {
                     value={selectedFont}
                     onChange={(e) => setSelectedFont(e.target.value)}
                     className="px-4 py-2 border border-stone-light rounded-lg text-navy bg-surface focus:outline-none focus:border-teal focus:ring-2 focus:ring-teal-light cursor-pointer"
+                    style={{ fontFamily: selectedFont }}
                   >
                     {fonts.map((font) => (
-                      <option key={font.id} value={font.id}>
+                      <option
+                        key={font.id}
+                        value={font.id}
+                        style={{ fontFamily: font.id }}
+                      >
                         {font.name}
                       </option>
                     ))}
@@ -311,7 +322,6 @@ function App() {
                         const val = parseInt(e.target.value);
                         if (!isNaN(val) && val > 0) {
                           setFontSize(val);
-                          handleGenerate(val);
                         }
                       }}
                       className="w-20 px-2 py-1 text-center border border-stone-light rounded text-sm text-navy focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal-light [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"

@@ -7,6 +7,15 @@ export default defineConfig({
   base: '/sacredlockscreen/',
   server: {
     proxy: {
+      '/sacredlockscreen/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/sacredlockscreen/, ''),
+      },
+      '/sacredlockscreen/backgrounds': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,

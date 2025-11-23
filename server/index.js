@@ -119,8 +119,8 @@ async function loadFont() {
   }
 }
 
-// Get backgrounds list
-app.get('/sacredlockscreen/api/backgrounds', (req, res) => {
+// Helper handlers for API endpoints (used by both prefixed and non-prefixed routes)
+function getBackgrounds(req, res) {
   const backgroundsDir = path.join(__dirname, '../public/backgrounds');
   const files = fs.readdirSync(backgroundsDir).filter(f => /\.(jpg|jpeg|png)$/i.test(f));
 
@@ -132,21 +132,29 @@ app.get('/sacredlockscreen/api/backgrounds', (req, res) => {
   }));
 
   res.json(backgrounds);
-});
+}
 
-// Get device presets
-app.get('/sacredlockscreen/api/device-presets', (req, res) => {
+function getDevicePresets(req, res) {
   res.json(devicePresets);
-});
+}
 
-// Get available fonts
-app.get('/sacredlockscreen/api/fonts', (req, res) => {
+function getFonts(req, res) {
   const fonts = AVAILABLE_FONTS.map(f => ({
     id: f.id,
     name: f.name
   }));
   res.json(fonts);
-});
+}
+
+// Production routes (with /sacredlockscreen prefix)
+app.get('/sacredlockscreen/api/backgrounds', getBackgrounds);
+app.get('/sacredlockscreen/api/device-presets', getDevicePresets);
+app.get('/sacredlockscreen/api/fonts', getFonts);
+
+// Development routes (without prefix - for Vite proxy)
+app.get('/api/backgrounds', getBackgrounds);
+app.get('/api/device-presets', getDevicePresets);
+app.get('/api/fonts', getFonts);
 
 // Deterministic font size calculator
 function calculateFontSize(verseText) {
@@ -162,8 +170,8 @@ function calculateFontSize(verseText) {
   return 42;
 }
 
-// Generate image
-app.post('/sacredlockscreen/api/generate', async (req, res) => {
+// Generate image handler
+async function generateImage(req, res) {
   try {
     const { verse, reference, backgroundId, devicePreset, fontSize, fontFamily = 'dejavu-serif' } = req.body;
 
@@ -293,7 +301,13 @@ app.post('/sacredlockscreen/api/generate', async (req, res) => {
     console.error('Generation error:', error);
     res.status(500).json({ error: 'Failed to generate image: ' + error.message });
   }
-});
+}
+
+// Production route (with /sacredlockscreen prefix)
+app.post('/sacredlockscreen/api/generate', generateImage);
+
+// Development route (without prefix - for Vite proxy)
+app.post('/api/generate', generateImage);
 
 // Serve index.html for all other routes under /sacredlockscreen (SPA support)
 if (process.env.NODE_ENV === 'production') {

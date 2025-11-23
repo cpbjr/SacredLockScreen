@@ -21,13 +21,13 @@ export default defineConfig({
     {
       command: 'node server/index.js',
       url: 'http://localhost:3001/api/backgrounds',
-      reuseExistingServer: false,
+      reuseExistingServer: true,
       timeout: 30000,
     },
     {
       command: 'cd client && npm run dev',
       url: 'http://localhost:5173',
-      reuseExistingServer: false,
+      reuseExistingServer: true,
       timeout: 30000,
     },
   ],
