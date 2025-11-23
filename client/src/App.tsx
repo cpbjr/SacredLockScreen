@@ -29,7 +29,7 @@ interface Font {
   name: string;
 }
 
-// Background Gallery Component with scroll-triggered animations
+// Background Gallery Component - Mobile-First (375px optimized)
 const BackgroundGallerySection = ({
   backgrounds,
   selectedBackground,
@@ -40,54 +40,54 @@ const BackgroundGallerySection = ({
   setSelectedBackground: (id: string) => void;
 }) => {
   const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
+  const isInView = useInView(sectionRef, { once: true, margin: "-50px" });
 
   return (
-    <section ref={sectionRef} className="bg-surface/80 backdrop-blur-sm rounded-2xl p-8 shadow-glow-sm mb-8 border border-primary/10">
-      <div className="text-center mb-8">
-        <h3 className="font-display text-3xl font-semibold text-navy mb-3 text-glow">
-          Choose Your Sacred Backdrop
+    <section ref={sectionRef} className="bg-surface rounded-2xl p-5 md:p-7 shadow-sm mb-6 border border-stone-light/30">
+      <div className="mb-5">
+        <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy mb-2 text-center">
+          Choose Background
         </h3>
-        <GoldenAccent variant="line" className="mx-auto mb-4 opacity-50" />
-        <p className="text-stone">Select from our curated collection of inspiring imagery</p>
+        <GoldenAccent variant="line" className="mx-auto mb-3 opacity-40 scale-75" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+      {/* Mobile-optimized: 2 columns, compact spacing */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         {backgrounds.map((bg, index) => (
           <motion.button
             key={bg.id}
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
+            transition={{ duration: 0.5, delay: index * 0.08 }}
             onClick={() => setSelectedBackground(bg.id)}
-            className={`group relative aspect-[9/16] rounded-xl overflow-hidden border-3 transition-all duration-300 ${
+            className={`group relative aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all duration-300 touch-manipulation ${
               selectedBackground === bg.id
-                ? 'border-primary shadow-glow-golden scale-[1.02]'
-                : 'border-transparent hover:border-primary/30 hover:shadow-glow-sm hover:scale-[1.01]'
+                ? 'border-primary shadow-glow-md scale-[0.98]'
+                : 'border-stone-light/40 active:scale-[0.96]'
             }`}
           >
             <img
               src={bg.thumbnailUrl}
               alt={bg.filename}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-transform duration-300"
             />
 
-            {/* Overlay with glow effect */}
+            {/* Subtle overlay */}
             <div className={`absolute inset-0 transition-opacity duration-300 ${
               selectedBackground === bg.id
-                ? 'bg-gradient-to-t from-primary/20 via-transparent to-transparent'
-                : 'bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 group-hover:opacity-100'
+                ? 'bg-gradient-to-t from-primary/15 via-transparent to-transparent'
+                : 'bg-gradient-to-t from-black/5 via-transparent to-transparent'
             }`} />
 
-            {/* Selected indicator with radial glow */}
+            {/* Selected indicator - compact for mobile */}
             {selectedBackground === bg.id && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="absolute top-4 right-4"
+                className="absolute top-2 right-2"
               >
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-navy shadow-glow-lg">
-                  <Sparkles className="w-5 h-5" />
+                <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-navy shadow-glow-md">
+                  <Sparkles className="w-3.5 h-3.5" />
                 </div>
               </motion.div>
             )}
@@ -220,120 +220,122 @@ function App() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Floating particles atmosphere */}
+      {/* Subtle atmospheric particles - reduced for mobile */}
       <FloatingParticles />
 
-      {/* Ethereal Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* Animated light rays background */}
-        <LightRays />
+      {/* Mobile-Optimized Hero Section - Simplified */}
+      <section className="relative min-h-[60vh] md:min-h-[75vh] flex items-center justify-center overflow-hidden">
+        {/* Simplified light rays for mobile performance */}
+        <div className="absolute inset-0 bg-gradient-to-b from-page via-surface to-page opacity-80" />
 
-        {/* Radial golden gradient overlay */}
-        <div className="absolute inset-0 bg-radial-golden pointer-events-none" />
+        {/* Gentle golden radial glow */}
+        <div className="absolute inset-0 bg-radial-golden pointer-events-none opacity-60" />
 
-        {/* Hero content */}
-        <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-12 text-center py-20">
+        {/* Compact Hero Content - Mobile First */}
+        <div className="relative z-10 w-full max-w-xl mx-auto px-5 text-center py-12">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <Sparkles className="w-12 h-12 mx-auto mb-6 text-primary opacity-70 animate-glow-pulse" />
+            {/* Smaller icon for mobile */}
+            <Sparkles className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-5 text-primary opacity-70 animate-glow-pulse" />
 
-            <h1 className="font-display text-6xl md:text-7xl lg:text-8xl font-bold text-navy mb-6 text-glow-strong leading-tight">
+            {/* Responsive heading - mobile optimized */}
+            <h1 className="font-display text-4xl md:text-6xl font-bold text-navy mb-5 text-glow-strong leading-tight px-4">
               Sacred Lock Screens
             </h1>
 
-            <GoldenAccent variant="line" className="mx-auto mb-8 opacity-60" />
+            <GoldenAccent variant="line" className="mx-auto mb-6 opacity-60 scale-90" />
 
-            <p className="text-xl md:text-2xl text-charcoal font-light max-w-3xl mx-auto leading-relaxed mb-4">
-              Transform your daily devotion into beautiful art
+            {/* Concise tagline for mobile */}
+            <p className="text-lg md:text-xl text-charcoal font-light max-w-md mx-auto leading-relaxed mb-3 px-4">
+              Transform scripture into beautiful phone wallpapers
             </p>
 
-            <p className="text-lg text-stone max-w-2xl mx-auto leading-relaxed">
-              Create stunning, readable Bible verse lock screens with guaranteed text accuracy.
-              Paste any verse and watch it come alive with ethereal beauty.
+            <p className="text-sm md:text-base text-stone max-w-sm mx-auto leading-relaxed px-6">
+              AI-powered text sizing ensures every verse is perfectly readable
             </p>
 
+            {/* Sticky CTA - thumb-friendly */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 1 }}
-              className="mt-12"
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="mt-8"
             >
               <a
                 href="#create"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary-hover text-navy font-semibold rounded-lg transition-all shadow-glow-md hover:shadow-glow-lg"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary hover:bg-primary-hover active:scale-95 text-navy font-semibold rounded-xl transition-all shadow-glow-md text-base touch-manipulation"
               >
                 Begin Creating
-                <Sparkles className="w-5 h-5" />
+                <Sparkles className="w-4 h-4" />
               </a>
             </motion.div>
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
+        {/* Scroll indicator - subtle on mobile */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6 }}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          animate={{ opacity: 0.4 }}
+          transition={{ delay: 1, duration: 1 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden md:block"
         >
-          <div className="w-6 h-10 border-2 border-primary rounded-full flex items-start justify-center p-2 opacity-50 animate-glow-pulse">
+          <div className="w-5 h-8 border-2 border-primary rounded-full flex items-start justify-center p-1.5 opacity-50">
             <motion.div
-              animate={{ y: [0, 12, 0] }}
+              animate={{ y: [0, 8, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              className="w-1.5 h-1.5 bg-primary rounded-full"
+              className="w-1 h-1 bg-primary rounded-full"
             />
           </div>
         </motion.div>
       </section>
 
-      {/* Main Content */}
-      <main id="create" className="max-w-3xl mx-auto px-6 md:px-12 py-16 relative z-10">
+      {/* Main Content - Mobile-First Cards */}
+      <main id="create" className="max-w-2xl mx-auto px-4 md:px-8 py-10 md:py-16 relative z-10">
 
-        {/* Error Display */}
+        {/* Error Display - Mobile Optimized */}
         {error && (
-          <div className="flex items-start gap-3 p-4 mb-6 bg-error-light border border-error rounded-lg text-error text-sm">
+          <div className="flex items-start gap-2.5 p-3.5 mb-5 bg-error-light border-l-4 border-error rounded-lg text-error text-sm shadow-sm">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span>{error}</span>
+            <span className="leading-snug">{error}</span>
           </div>
         )}
 
-        {/* Step 1: Enter Verse - Refined Design */}
-        <section className="bg-surface/80 backdrop-blur-sm rounded-2xl p-8 shadow-glow-sm mb-8 border border-primary/10">
-          <div className="text-center mb-6">
-            <h3 className="font-display text-3xl font-semibold text-navy mb-3 text-glow">
-              Begin With Scripture
+        {/* Step 1: Enter Verse - Minimalist Mobile Card */}
+        <section className="bg-surface rounded-2xl p-5 md:p-7 shadow-sm mb-6 border border-stone-light/30">
+          <div className="mb-5">
+            <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy mb-2 text-center">
+              Your Scripture
             </h3>
-            <GoldenAccent variant="line" className="mx-auto mb-4 opacity-50" />
-            <p className="text-stone">Share the verse that speaks to your heart</p>
+            <GoldenAccent variant="line" className="mx-auto mb-3 opacity-40 scale-75" />
           </div>
 
-          <label className="block text-sm font-display font-medium text-charcoal mb-3">
+          <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2">
             Verse Text
           </label>
           <textarea
             value={verse}
             onChange={(e) => setVerse(e.target.value)}
-            placeholder="Enter your Bible verse here..."
-            className="w-full min-h-36 p-5 border-2 border-primary/20 rounded-xl text-navy placeholder:text-stone/50 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all resize-y bg-surface/80 backdrop-blur-sm leading-relaxed"
+            placeholder="Paste your favorite verse..."
+            className="w-full min-h-32 p-4 border-2 border-stone-light/50 rounded-xl text-navy text-base placeholder:text-stone/40 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all resize-y bg-surface leading-relaxed touch-manipulation"
           />
-          <div className={`text-right text-sm mt-2 font-medium ${
-            charCount > 500 ? 'text-error' : charCount > 400 ? 'text-coral' : 'text-stone'
+          <div className={`text-right text-xs mt-1.5 font-medium ${
+            charCount > 500 ? 'text-error' : charCount > 400 ? 'text-coral' : 'text-stone/60'
           }`}>
-            {charCount}/500 characters
+            {charCount}/500
           </div>
 
-          <label className="block text-sm font-display font-medium text-charcoal mb-3 mt-6">
-            Verse Reference
+          <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2 mt-5">
+            Reference (Optional)
           </label>
           <input
             type="text"
             value={reference}
             onChange={(e) => setReference(e.target.value)}
-            placeholder="e.g., John 3:16"
-            className="w-full p-4 border-2 border-primary/20 rounded-xl text-navy placeholder:text-stone/50 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all bg-surface/80 backdrop-blur-sm"
+            placeholder="John 3:16"
+            className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base placeholder:text-stone/40 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all bg-surface touch-manipulation"
           />
         </section>
 
@@ -344,20 +346,19 @@ function App() {
           setSelectedBackground={setSelectedBackground}
         />
 
-        {/* Step 3: Screen Size - Refined Design */}
-        <section className="bg-surface/80 backdrop-blur-sm rounded-2xl p-8 shadow-glow-sm mb-10 border border-primary/10">
-          <div className="text-center mb-6">
-            <h3 className="font-display text-3xl font-semibold text-navy mb-3 text-glow">
-              Select Your Device
+        {/* Step 3: Device Size - Mobile Minimalist */}
+        <section className="bg-surface rounded-2xl p-5 md:p-7 shadow-sm mb-6 border border-stone-light/30">
+          <div className="mb-4">
+            <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy mb-2 text-center">
+              Device Size
             </h3>
-            <GoldenAccent variant="line" className="mx-auto mb-4 opacity-50" />
-            <p className="text-stone">Choose the perfect dimensions for your screen</p>
+            <GoldenAccent variant="line" className="mx-auto mb-3 opacity-40 scale-75" />
           </div>
 
           <select
             value={selectedPreset}
             onChange={(e) => setSelectedPreset(e.target.value)}
-            className="w-full p-4 border-2 border-primary/20 rounded-xl text-navy bg-surface/80 backdrop-blur-sm focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium"
+            className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium touch-manipulation"
           >
             {devicePresets.map((preset) => (
               <option key={preset.id} value={preset.id}>
@@ -367,179 +368,170 @@ function App() {
           </select>
         </section>
 
-        {/* Generate Button - Glowing CTA */}
-        <div className="flex justify-center mb-16">
+        {/* Generate Button - Full-Width Mobile CTA */}
+        <div className="mb-10">
           <motion.button
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => handleGenerate()}
             disabled={loading || !isValidLength}
-            className="px-12 py-5 bg-primary hover:bg-primary-hover text-navy font-display font-bold text-lg rounded-xl transition-all shadow-glow-golden hover:shadow-glow-radial disabled:bg-stone-light disabled:text-stone disabled:cursor-not-allowed disabled:shadow-none flex items-center gap-3"
+            className="w-full px-6 py-4 bg-primary active:bg-primary-hover text-navy font-display font-bold text-lg rounded-xl transition-all shadow-glow-md disabled:bg-stone-light disabled:text-stone disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2.5 touch-manipulation"
           >
             {loading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                Creating Your Masterpiece...
+                Creating...
               </>
             ) : (
               <>
                 <Sparkles className="w-6 h-6" />
-                Generate Sacred Image
+                Generate Lock Screen
               </>
             )}
           </motion.button>
         </div>
 
-        {/* Preview & Adjust - Celebratory Reveal */}
+        {/* Preview & Adjust - Mobile-Optimized Results */}
         {generatedImage && (
           <motion.section
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="bg-gradient-to-br from-surface/90 via-surface/80 to-surface/90 backdrop-blur-sm rounded-2xl p-10 shadow-glow-golden border border-primary/20 relative overflow-hidden"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="bg-surface rounded-2xl p-5 md:p-7 shadow-glow-md border border-primary/20"
           >
-            {/* Decorative golden circles */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-coral/5 rounded-full blur-3xl -z-10" />
-
-            <div className="text-center mb-8">
+            <div className="text-center mb-5">
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 180 }}
               >
-                <Sparkles className="w-10 h-10 mx-auto mb-4 text-primary animate-glow-pulse" />
+                <Sparkles className="w-8 h-8 mx-auto mb-3 text-primary opacity-80" />
               </motion.div>
-              <h3 className="font-display text-3xl font-semibold text-navy mb-2 text-glow">
-                Your Sacred Creation
+              <h3 className="font-display text-2xl font-semibold text-navy mb-1">
+                Your Lock Screen
               </h3>
-              <p className="text-stone">Adjust and perfect your lock screen</p>
+              <p className="text-xs text-stone uppercase tracking-wide">Customize below</p>
             </div>
 
-            <div className="flex flex-col items-center">
-              {/* Image preview with radial glow background */}
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent blur-2xl" />
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="relative bg-gradient-to-br from-stone-light/30 to-stone-light/10 p-6 rounded-2xl shadow-glow-md"
+            {/* Image Preview - Mobile Centered */}
+            <div className="flex justify-center mb-6">
+              <motion.div
+                initial={{ y: 15, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="bg-stone-light/10 p-3 rounded-xl shadow-lg"
+              >
+                <img
+                  src={generatedImage}
+                  alt="Generated lock screen"
+                  className="max-w-full max-h-[420px] rounded-lg shadow-xl"
+                />
+              </motion.div>
+            </div>
+
+            {/* Font and Size Controls - Mobile Stacked */}
+            <motion.div
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+              className="space-y-5 mb-6"
+            >
+              {/* Font Selector */}
+              <div>
+                <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2">
+                  Font Style
+                </label>
+                <select
+                  value={selectedFont}
+                  onChange={(e) => setSelectedFont(e.target.value)}
+                  className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium touch-manipulation"
+                  style={{ fontFamily: selectedFont }}
                 >
-                  <img
-                    src={generatedImage}
-                    alt="Generated lock screen"
-                    className="max-w-full max-h-[500px] rounded-xl shadow-2xl"
-                  />
-                </motion.div>
+                  {fonts.map((font) => (
+                    <option
+                      key={font.id}
+                      value={font.id}
+                      style={{ fontFamily: font.id }}
+                    >
+                      {font.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Font and Size Controls - Refined Design */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.6 }}
-                className="flex flex-col items-center gap-6 mt-10 w-full max-w-md"
-              >
-                {/* Font Selector */}
-                <div className="w-full">
-                  <label className="block text-sm font-display font-medium text-charcoal mb-2 text-center">
-                    Typography
-                  </label>
-                  <select
-                    value={selectedFont}
-                    onChange={(e) => setSelectedFont(e.target.value)}
-                    className="w-full px-5 py-3 border-2 border-primary/20 rounded-xl text-navy bg-surface/80 backdrop-blur-sm focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium"
-                    style={{ fontFamily: selectedFont }}
+              {/* Font Size Controls - Mobile Thumb-Friendly */}
+              <div>
+                <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2">
+                  Text Size
+                </label>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={() => adjustFontSize(-5)}
+                    className="w-12 h-12 flex items-center justify-center border-2 border-primary/40 rounded-xl active:bg-primary/10 transition-all text-primary touch-manipulation"
                   >
-                    {fonts.map((font) => (
-                      <option
-                        key={font.id}
-                        value={font.id}
-                        style={{ fontFamily: font.id }}
-                      >
-                        {font.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Font Size Controls */}
-                <div className="w-full">
-                  <label className="block text-sm font-display font-medium text-charcoal mb-3 text-center">
-                    Text Size
-                  </label>
-                  <div className="flex items-center justify-center gap-4">
-                    <button
-                      onClick={() => adjustFontSize(-5)}
-                      className="w-12 h-12 flex items-center justify-center border-2 border-primary/30 rounded-xl hover:border-primary hover:shadow-glow-sm hover:bg-primary/5 transition-all text-primary"
-                    >
-                      <Minus className="w-5 h-5" />
-                    </button>
-                    <div className="flex flex-col items-center gap-1">
-                      <input
-                        type="number"
-                        value={fontSize || ''}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (!isNaN(val) && val > 0) {
-                            setFontSize(val);
-                          }
-                        }}
-                        className="w-24 px-3 py-2 text-center border-2 border-primary/20 rounded-xl text-lg font-semibold text-navy bg-surface/80 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all"
-                        placeholder="72"
-                        min="10"
-                        max="200"
-                      />
-                      <span className="text-xs text-stone font-medium">
-                        pixels
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => adjustFontSize(5)}
-                      className="w-12 h-12 flex items-center justify-center border-2 border-primary/30 rounded-xl hover:border-primary hover:shadow-glow-sm hover:bg-primary/5 transition-all text-primary"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
+                    <Minus className="w-5 h-5" />
+                  </button>
+                  <div className="flex flex-col items-center">
+                    <input
+                      type="number"
+                      value={fontSize || ''}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val) && val > 0) {
+                          setFontSize(val);
+                        }
+                      }}
+                      className="w-20 px-3 py-2.5 text-center border-2 border-stone-light/50 rounded-xl text-lg font-semibold text-navy bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all touch-manipulation"
+                      placeholder="72"
+                      min="10"
+                      max="200"
+                    />
+                    <span className="text-xs text-stone/60 font-medium mt-1">
+                      px
+                    </span>
                   </div>
+                  <button
+                    onClick={() => adjustFontSize(5)}
+                    className="w-12 h-12 flex items-center justify-center border-2 border-primary/40 rounded-xl active:bg-primary/10 transition-all text-primary touch-manipulation"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
                 </div>
-              </motion.div>
+              </div>
+            </motion.div>
 
-              {/* Action Buttons - Glowing CTAs */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
-                className="flex gap-4 mt-10"
+            {/* Action Buttons - Mobile Stacked Full-Width */}
+            <motion.div
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="flex flex-col gap-3"
+            >
+              <button
+                onClick={handleDownload}
+                className="w-full px-6 py-3.5 bg-primary active:bg-primary-hover text-navy font-semibold rounded-xl shadow-glow-md transition-all flex items-center justify-center gap-2 touch-manipulation"
               >
-                <button
-                  onClick={handleRegenerate}
-                  disabled={loading}
-                  className="px-8 py-4 border-2 border-teal text-teal font-semibold rounded-xl hover:bg-teal-light hover:shadow-glow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className="w-5 h-5" />
-                  Regenerate
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="px-8 py-4 bg-primary hover:bg-primary-hover text-navy font-semibold rounded-xl shadow-glow-md hover:shadow-glow-lg transition-all flex items-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  Download
-                </button>
-              </motion.div>
-            </div>
+                <Download className="w-5 h-5" />
+                Download Lock Screen
+              </button>
+              <button
+                onClick={handleRegenerate}
+                disabled={loading}
+                className="w-full px-6 py-3.5 border-2 border-teal text-teal font-semibold rounded-xl active:bg-teal-light transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Regenerate
+              </button>
+            </motion.div>
           </motion.section>
         )}
       </main>
 
-      {/* Footer - Elegant and Ethereal */}
-      <footer className="relative border-t border-primary/10 py-12 mt-24 text-center">
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent pointer-events-none" />
+      {/* Footer - Minimal Mobile */}
+      <footer className="relative border-t border-stone-light/20 py-8 mt-16 text-center">
         <div className="relative">
-          <GoldenAccent variant="circle" className="mx-auto mb-4 opacity-30" />
-          <p className="text-sm text-stone font-light">
-            © 2025 WhitePine Tech · Crafted with devotion
+          <GoldenAccent variant="circle" className="mx-auto mb-3 opacity-20 scale-75" />
+          <p className="text-xs text-stone/70">
+            © 2025 WhitePine Tech
           </p>
         </div>
       </footer>
