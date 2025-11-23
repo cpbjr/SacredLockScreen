@@ -25,7 +25,7 @@ const devicePresets = [
   { id: 'samsung-galaxy', name: 'Samsung Galaxy', width: 1440, height: 3088, isDefault: false },
 ];
 
-// Available fonts (curated list - mostly serif for scripture)
+// Available fonts (curated list - serif + script fonts for scripture)
 const AVAILABLE_FONTS = [
   {
     id: 'dejavu-serif',
@@ -52,13 +52,6 @@ const AVAILABLE_FONTS = [
     ]
   },
   {
-    id: 'free-serif',
-    name: 'Free Serif',
-    paths: [
-      '/usr/share/fonts/truetype/freefont/FreeSerif.ttf',
-    ]
-  },
-  {
     id: 'noto-serif',
     name: 'Noto Serif',
     paths: [
@@ -66,10 +59,17 @@ const AVAILABLE_FONTS = [
     ]
   },
   {
-    id: 'noto-serif-display',
-    name: 'Noto Serif Display',
+    id: 'italianno',
+    name: 'Italianno',
     paths: [
-      '/usr/share/fonts/truetype/noto/NotoSerifDisplay-Regular.ttf',
+      path.join(__dirname, '../public/fonts/Italianno-Regular.ttf'),
+    ]
+  },
+  {
+    id: 'great-vibes',
+    name: 'Great Vibes',
+    paths: [
+      path.join(__dirname, '../public/fonts/GreatVibes-Regular.ttf'),
     ]
   },
 ];

@@ -112,6 +112,19 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Map font IDs to CSS font family names
+  const getFontFamily = (fontId: string): string => {
+    const fontMap: Record<string, string> = {
+      'dejavu-serif': 'serif',
+      'dejavu-sans': 'sans-serif',
+      'liberation-serif': 'serif',
+      'noto-serif': 'serif',
+      'italianno': 'Italianno, cursive',
+      'great-vibes': 'Great Vibes, cursive',
+    };
+    return fontMap[fontId] || 'serif';
+  };
+
   // Fetch initial data
   useEffect(() => {
     Promise.all([
@@ -443,13 +456,13 @@ function App() {
                   value={selectedFont}
                   onChange={(e) => setSelectedFont(e.target.value)}
                   className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium touch-manipulation"
-                  style={{ fontFamily: selectedFont }}
+                  style={{ fontFamily: getFontFamily(selectedFont) }}
                 >
                   {fonts.map((font) => (
                     <option
                       key={font.id}
                       value={font.id}
-                      style={{ fontFamily: font.id }}
+                      style={{ fontFamily: getFontFamily(font.id) }}
                     >
                       {font.name}
                     </option>

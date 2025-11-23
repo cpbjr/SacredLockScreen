@@ -1,6 +1,23 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+/* Custom Script Fonts */
+@font-face {
+  font-family: 'Italianno';
+  src: url('/fonts/Italianno-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Great Vibes';
+  src: url('/fonts/GreatVibes-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-primary: #D4A853;
   --color-primary-hover: #C49943;

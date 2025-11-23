@@ -343,6 +343,29 @@ Sacred Minimalist with Ethereal Touches - Monastery meets modern iOS. Refined, c
 
 ---
 
+## Recently Completed
+
+### Session: Script Fonts Addition (2025-11-23)
+
+**Status:** ✅ COMPLETE
+
+**Summary:**
+Added elegant script fonts (Italianno, Great Vibes) to font selector with live font preview. Replaced two serif fonts with beautiful calligraphy options for enhanced sacred lock screen customization.
+
+**Key Changes:**
+- Added 2 script fonts: Italianno (cursive) and Great Vibes (calligraphy)
+- Removed Free Serif and Noto Serif Display
+- Implemented @font-face declarations and font preview in dropdown
+- Font names now display in their actual typefaces
+
+**Final Font List:** DejaVu Serif, DejaVu Sans, Liberation Serif, Noto Serif, Italianno, Great Vibes
+
+**Files Modified:** `server/index.js`, `client/src/index.css`, `client/src/App.tsx`, font files in `public/fonts/` and `client/public/fonts/`
+
+**Completed:** 2025-11-23
+
+---
+
 ## Current Sprint
 
 No active tasks. All improvements complete and tested.
@@ -355,4 +378,4 @@ No active tasks. All improvements complete and tested.
 - [ ] Text alignment options
 - [ ] Background upload feature
 
-**Last Updated:** 2025-11-23 22:30
+**Last Updated:** 2025-11-23 16:20
