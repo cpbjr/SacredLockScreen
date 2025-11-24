@@ -121,6 +121,8 @@ function App() {
       'noto-serif': 'serif',
       'italianno': 'Italianno, cursive',
       'great-vibes': 'Great Vibes, cursive',
+      'rindeya': 'Rindeya, cursive',
+      'ms-stusi': 'Ms Stusi, cursive',
     };
     return fontMap[fontId] || 'serif';
   };

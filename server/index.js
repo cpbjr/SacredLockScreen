@@ -72,6 +72,20 @@ const AVAILABLE_FONTS = [
       path.join(__dirname, '../public/fonts/GreatVibes-Regular.ttf'),
     ]
   },
+  {
+    id: 'rindeya',
+    name: 'Rindeya',
+    paths: [
+      path.join(__dirname, '../public/fonts/Rindeya.ttf'),
+    ]
+  },
+  {
+    id: 'ms-stusi',
+    name: 'Ms Stusi',
+    paths: [
+      path.join(__dirname, '../public/fonts/Ms Stusi.otf'),
+    ]
+  },
 ];
 
 // Font cache

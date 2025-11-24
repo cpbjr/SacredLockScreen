@@ -18,6 +18,22 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Rindeya';
+  src: url('/fonts/Rindeya.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Ms Stusi';
+  src: url('/fonts/Ms Stusi.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-primary: #D4A853;
   --color-primary-hover: #C49943;
