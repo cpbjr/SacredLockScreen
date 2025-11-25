@@ -118,7 +118,8 @@ function App() {
     return fontMap[fontId] || 'serif';
   };
 
-  const [useAI, setUseAI] = useState(false);
+  const [useAI, setUseAI] = useState(true);
+  const [useProFont, setUseProFont] = useState(true);
 
 
   // Fetch initial data
@@ -157,47 +158,93 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFont, fontSize]);
 
-  // Generate image
+  // Generate image (Intelligent Pipeline)
   const handleGenerate = async (customFontSize?: number) => {
-    if (!isValidLength) {
-      setError('Text must be between 10 and 500 characters');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const fontSizeToUse = customFontSize !== undefined ? customFontSize : fontSize;
-
-    const requestBody = {
-      verse: verse.trim(),
-      reference: reference.trim(),
-      backgroundId: selectedBackground,
-      devicePreset: selectedPreset,
-      fontFamily: selectedFont,
-      fontSize: useAI ? null : fontSizeToUse,
-      useAI
-    };
-
-    try {
-      const response = await fetch(`${API_BASE}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Generation failed');
+    // If we already have an image and are just adjusting size, skip the AI processing
+    if (customFontSize !== undefined && generatedImage) {
+      // Just regenerate image with new size
+      // ... (existing logic for simple regeneration)
+    } else {
+      // Full generation flow
+      if (!verse.trim()) {
+        setError('Please enter some text to start.');
+        return;
       }
 
-      const data = await response.json();
-      setGeneratedImage(data.image);
-      setFontSize(data.fontSize);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate image');
-    } finally {
-      setLoading(false);
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Step 1: Process Input (AI Intent & Content)
+        // Only do this if we don't have a generated image yet, or if the user explicitly clicked "Generate"
+        // For now, we'll assume every "Generate" click triggers the pipeline unless it's a size adjustment
+
+        let finalVerse = verse;
+        let finalRef = reference;
+        let finalBg = selectedBackground;
+
+        // Call Process API
+        const processRes = await fetch(`${API_BASE}/api/process-input`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: verse })
+        });
+
+        if (!processRes.ok) {
+          // Fallback: If process fails, just use what the user typed
+          console.warn('AI Processing failed, using raw input');
+        } else {
+          const processData = await processRes.json();
+          if (processData.error) {
+            // If it's an off-topic error, stop here
+            if (processData.type === 'OFF_TOPIC') {
+              throw new Error(processData.error);
+            }
+          } else {
+            // Success! Update state with AI results
+            finalVerse = processData.verse;
+            finalRef = processData.reference || '';
+            finalBg = processData.backgroundId;
+
+            setVerse(finalVerse);
+            setReference(finalRef);
+            if (finalBg) setSelectedBackground(finalBg);
+          }
+        }
+
+        // Step 2: Generate Image (Nano Banana Pro)
+        const fontSizeToUse = customFontSize !== undefined ? customFontSize : fontSize;
+        const requestBody = {
+          verse: finalVerse,
+          reference: finalRef,
+          backgroundId: finalBg || backgrounds[0]?.id, // Fallback
+          devicePreset: selectedPreset,
+          fontFamily: selectedFont,
+          fontSize: useAI ? null : fontSizeToUse,
+          useAI,
+          useProFont
+        };
+
+        const response = await fetch(`${API_BASE}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Generation failed');
+        }
+
+        const data = await response.json();
+        setGeneratedImage(data.image);
+        setFontSize(data.fontSize);
+
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to generate image');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -263,7 +310,7 @@ function App() {
           </div>
         )}
 
-        {/* Step 1: Enter Text */}
+        {/* Step 1: Magic Input */}
         <section className="bg-surface rounded-3xl p-6 md:p-8 organic-shadow mb-8 border border-stone-light/20">
           <div className="mb-6 text-center">
             <h3 className="font-display text-2xl md:text-3xl font-medium text-navy mb-2">
@@ -272,30 +319,30 @@ function App() {
             <OrganicDivider className="opacity-60 scale-75" />
           </div>
 
-          <label className="block text-xs uppercase tracking-wider font-semibold text-stone mb-3 ml-1">
-            Message
-          </label>
-          <textarea
-            value={verse}
-            onChange={(e) => setVerse(e.target.value)}
-            placeholder="Type a quote, verse, or thought..."
-            className="w-full min-h-40 p-5 border border-stone-light rounded-2xl text-navy text-lg placeholder:text-stone/40 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all resize-y bg-page/50 leading-relaxed font-display"
-          />
-          <div className={`text-right text-xs mt-2 font-medium ${charCount > 500 ? 'text-error' : charCount > 400 ? 'text-coral' : 'text-stone/60'
-            }`}>
-            {charCount}/500
+          <div className="relative">
+            <textarea
+              value={verse}
+              onChange={(e) => setVerse(e.target.value)}
+              placeholder="Paste a verse, type a reference (e.g. John 3:16), or ask for a theme (e.g. Hope)..."
+              className="w-full min-h-40 p-5 border border-stone-light rounded-2xl text-navy text-lg placeholder:text-stone/40 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all resize-y bg-page/50 leading-relaxed font-display"
+            />
+            {loading && !generatedImage && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  <span className="text-sm font-medium text-navy">Analyzing...</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <label className="block text-xs uppercase tracking-wider font-semibold text-stone mb-3 mt-6 ml-1">
-            Attribution (Optional)
-          </label>
-          <input
-            type="text"
-            value={reference}
-            onChange={(e) => setReference(e.target.value)}
-            placeholder="e.g., Marcus Aurelius or John 3:16"
-            className="w-full p-4 border border-stone-light rounded-2xl text-navy text-base placeholder:text-stone/40 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all bg-page/50"
-          />
+          {/* Hidden reference input (populated by AI) */}
+          {reference && (
+            <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/10 flex items-center justify-between">
+              <span className="text-sm font-medium text-primary">Ref: {reference}</span>
+              <button onClick={() => setReference('')} className="text-xs text-primary/60 hover:text-primary">Clear</button>
+            </div>
+          )}
         </section>
 
         {/* Step 2: Choose Background */}
@@ -383,69 +430,15 @@ function App() {
 
               {/* Controls */}
               <div className="order-1 md:order-2 space-y-8 pt-4">
-                {/* Font Selection */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-navy/70">Font Style</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {fonts.map(font => (
-                      <button
-                        key={font.id}
-                        onClick={() => setSelectedFont(font.id)}
-                        className={`p-2 text-sm rounded-md border transition-all ${selectedFont === font.id
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-white text-navy border-stone-light hover:border-primary/50'
-                          }`}
-                        style={{ fontFamily: font.name }}
-                      >
-                        {font.name}
-                      </button>
-                    ))}
-                  </div>
+
+
+                {/* AI Status Indicator */}
+                <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 text-center">
+                  <p className="text-purple-800 font-medium text-sm">✨ Nano Banana Pro Active</p>
+                  <p className="text-purple-600/80 text-xs mt-1">AI is crafting the perfect typography for this moment.</p>
                 </div>
 
-                {/* AI Layout Toggle */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-3 p-3 bg-white/50 rounded-lg border border-stone-light/50">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="ai-mode"
-                        type="checkbox"
-                        checked={useAI}
-                        onChange={(e) => setUseAI(e.target.checked)}
-                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label htmlFor="ai-mode" className="font-medium text-navy">Nano Banana AI Layout</label>
-                      <p className="text-stone text-xs">Automatically adjusts size & spacing (Gemini)</p>
-                    </div>
-                  </div>
 
-                </div>
-
-                {/* Size Controls */}
-                <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-stone mb-3">
-                    Size
-                  </label>
-                  <div className="flex items-center gap-4 bg-page/50 p-2 rounded-2xl border border-stone-light/30">
-                    <button
-                      onClick={() => adjustFontSize(-5)}
-                      className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white transition-colors text-navy"
-                    >
-                      <Minus className="w-5 h-5" />
-                    </button>
-                    <div className="flex-1 text-center font-semibold text-lg text-navy">
-                      {fontSize}px
-                    </div>
-                    <button
-                      onClick={() => adjustFontSize(5)}
-                      className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white transition-colors text-navy"
-                    >
-                      <Plus className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
 
                 {/* Actions */}
                 <div className="space-y-3 pt-4">

@@ -6,7 +6,7 @@ const satori = require('satori').default;
 const { Resvg } = require('@resvg/resvg-js');
 const sharp = require('sharp');
 require('dotenv').config();
-const { calculateOptimalLayout } = require('./ai-service');
+const { calculateOptimalLayout, generateAIFont, processUserRequest } = require('./ai-service');
 const app = express();
 const PORT = 3001;
 
@@ -220,6 +220,8 @@ async function generateImage(req, res) {
       maxWidth: '80%'
     };
 
+    let aiSvg = null;
+
     if (req.body.useAI) {
       console.log('Using AI for layout...');
       const aiLayout = await calculateOptimalLayout(verse, process.env.OPENROUTER_API_KEY);
@@ -238,6 +240,21 @@ async function generateImage(req, res) {
           maxWidth: aiLayout.maxWidth ? `${aiLayout.maxWidth}%` : '80%'
         };
       }
+
+      // AI Pro Font Generation (Now potentially Full Image Generation via Gemini 3 Pro)
+      if (req.body.useProFont) {
+        console.log('Generating Nano Banana Pro Art...');
+        aiSvg = await generateAIFont(verse, process.env.OPENROUTER_API_KEY, bgFile); // Pass bg filename as description
+      }
+    }
+
+    // CRITICAL CHANGE: If aiSvg is actually a URL (from Gemini 3 Pro Image Gen), return it directly!
+    if (aiSvg && (aiSvg.startsWith('http') || aiSvg.startsWith('data:image'))) {
+      console.log('Gemini 3 Pro returned a full image URL. Returning directly.');
+      return res.json({
+        image: aiSvg,
+        fontSize: layout.fontSize, // Placeholder
+      });
     }
 
     const verseFontSize = layout.fontSize;
@@ -260,7 +277,32 @@ async function generateImage(req, res) {
             paddingLeft: '10%',
             paddingRight: '10%',
           },
-          children: [
+          children: aiSvg ? [
+            {
+              type: 'img',
+              props: {
+                src: `data:image/svg+xml;base64,${Buffer.from(aiSvg).toString('base64')}`,
+                style: {
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '80%',
+                  objectFit: 'contain',
+                }
+              }
+            },
+            {
+              type: 'div',
+              props: {
+                style: {
+                  fontSize: referenceFontSize,
+                  color: 'white',
+                  marginTop: 30,
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
+                },
+                children: reference || '',
+              },
+            }
+          ] : [
             {
               type: 'div',
               props: {
@@ -367,6 +409,37 @@ if (process.env.NODE_ENV === 'production') {
 // Start server
 async function start() {
   await loadFont();
+  // Intelligent Pipeline Endpoint
+  app.post('/api/process-input', async (req, res) => {
+    try {
+      const { text } = req.body;
+
+      if (!text) {
+        return res.status(400).json({ error: 'Input text is required' });
+      }
+
+      // Get available backgrounds to pass to AI
+      const backgroundsDir = path.join(__dirname, '../public/backgrounds');
+      const files = fs.readdirSync(backgroundsDir).filter(f => /\.(jpg|jpeg|png)$/i.test(f));
+      const backgrounds = files.map((f, i) => ({
+        id: `bg-${i + 1}`,
+        filename: f
+      }));
+
+      console.log('Processing input with AI:', text.substring(0, 50) + '...');
+      const result = await processUserRequest(text, backgrounds, process.env.OPENROUTER_API_KEY);
+
+      if (result.error) {
+        return res.status(400).json({ error: result.error });
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error('Process Input Error:', error);
+      res.status(500).json({ error: 'Failed to process input' });
+    }
+  });
+
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
