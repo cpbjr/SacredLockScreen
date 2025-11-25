@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Minus, Plus, Download, RefreshCw, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Minus, Plus, Download, RefreshCw, Loader2, AlertCircle, Sparkles, PenTool, Image as ImageIcon } from 'lucide-react';
 import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
-import { FloatingParticles } from './components/FloatingParticles';
-import { GoldenAccent } from './components/GoldenAccent';
+import { OrganicBackground } from './components/OrganicBackground';
+import { OrganicDivider } from './components/OrganicDivider';
 
 // API_BASE is for API calls only - image URLs from backend already include full path
 // In development, use '' so Vite proxy handles the API requests
@@ -28,7 +27,7 @@ interface Font {
   name: string;
 }
 
-// Background Gallery Component - Mobile-First (375px optimized)
+// Background Gallery Component
 const BackgroundGallerySection = ({
   backgrounds,
   selectedBackground,
@@ -42,16 +41,16 @@ const BackgroundGallerySection = ({
   const isInView = useInView(sectionRef, { once: true, margin: "-50px" });
 
   return (
-    <section ref={sectionRef} className="bg-surface rounded-2xl p-5 md:p-7 shadow-sm mb-6 border border-stone-light/30">
-      <div className="mb-5">
-        <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy mb-2 text-center">
-          Choose Background
+    <section ref={sectionRef} className="bg-surface rounded-3xl p-6 md:p-8 organic-shadow mb-8 border border-stone-light/20">
+      <div className="mb-6 text-center">
+        <h3 className="font-display text-2xl md:text-3xl font-medium text-navy mb-2">
+          Choose Your Canvas
         </h3>
-        <GoldenAccent variant="line" className="mx-auto mb-3 opacity-40 scale-75" />
+        <OrganicDivider className="opacity-60 scale-75" />
       </div>
 
       {/* Mobile-optimized: 2 columns, compact spacing */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
         {backgrounds.map((bg, index) => (
           <motion.button
             key={bg.id}
@@ -59,34 +58,26 @@ const BackgroundGallerySection = ({
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: index * 0.08 }}
             onClick={() => setSelectedBackground(bg.id)}
-            className={`group relative aspect-[9/16] rounded-xl overflow-hidden border-2 transition-all duration-300 touch-manipulation ${
-              selectedBackground === bg.id
-                ? 'border-primary shadow-glow-md scale-[0.98]'
-                : 'border-stone-light/40 active:scale-[0.96]'
-            }`}
+            className={`group relative aspect-[9/16] rounded-2xl overflow-hidden transition-all duration-300 touch-manipulation ${selectedBackground === bg.id
+              ? 'ring-4 ring-primary/30 scale-[0.98]'
+              : 'hover:opacity-90 active:scale-[0.96]'
+              }`}
           >
             <img
               src={bg.thumbnailUrl}
               alt={bg.filename}
-              className="w-full h-full object-cover transition-transform duration-300"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
 
-            {/* Subtle overlay */}
-            <div className={`absolute inset-0 transition-opacity duration-300 ${
-              selectedBackground === bg.id
-                ? 'bg-gradient-to-t from-primary/15 via-transparent to-transparent'
-                : 'bg-gradient-to-t from-black/5 via-transparent to-transparent'
-            }`} />
-
-            {/* Selected indicator - compact for mobile */}
+            {/* Selected indicator */}
             {selectedBackground === bg.id && (
               <motion.div
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="absolute top-2 right-2"
+                className="absolute inset-0 bg-primary/10 flex items-center justify-center"
               >
-                <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-navy shadow-glow-md">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-primary shadow-lg">
+                  <Sparkles className="w-4 h-4" />
                 </div>
               </motion.div>
             )}
@@ -127,6 +118,9 @@ function App() {
     return fontMap[fontId] || 'serif';
   };
 
+  const [useAI, setUseAI] = useState(false);
+
+
   // Fetch initial data
   useEffect(() => {
     Promise.all([
@@ -166,7 +160,7 @@ function App() {
   // Generate image
   const handleGenerate = async (customFontSize?: number) => {
     if (!isValidLength) {
-      setError('Verse must be between 10 and 500 characters');
+      setError('Text must be between 10 and 500 characters');
       return;
     }
 
@@ -175,18 +169,15 @@ function App() {
 
     const fontSizeToUse = customFontSize !== undefined ? customFontSize : fontSize;
 
-    const requestBody: any = {
-      verse,
-      reference,
+    const requestBody = {
+      verse: verse.trim(),
+      reference: reference.trim(),
       backgroundId: selectedBackground,
       devicePreset: selectedPreset,
       fontFamily: selectedFont,
+      fontSize: useAI ? null : fontSizeToUse,
+      useAI
     };
-
-    // Only include fontSize if it's explicitly set
-    if (fontSizeToUse !== null && fontSizeToUse !== undefined) {
-      requestBody.fontSize = fontSizeToUse;
-    }
 
     try {
       const response = await fetch(`${API_BASE}/api/generate`, {
@@ -228,326 +219,261 @@ function App() {
     if (!generatedImage) return;
     const link = document.createElement('a');
     link.href = generatedImage;
-    link.download = `sacred-lockscreen-${Date.now()}.png`;
+    link.download = `inspired-wallpaper-${Date.now()}.png`;
     link.click();
   };
 
   return (
-    <div className="min-h-screen relative">
-      {/* Subtle atmospheric particles - reduced for mobile */}
-      <FloatingParticles />
+    <div className="min-h-screen relative font-body text-navy selection:bg-primary/20">
+      <OrganicBackground />
 
-      {/* Mobile-Optimized Hero Section - Simplified */}
-      <section className="relative min-h-[60vh] md:min-h-[75vh] flex items-center justify-center overflow-hidden">
-        {/* Simplified light rays for mobile performance */}
-        <div className="absolute inset-0 bg-gradient-to-b from-page via-surface to-page opacity-80" />
-
-        {/* Gentle golden radial glow */}
-        <div className="absolute inset-0 bg-radial-golden pointer-events-none opacity-60" />
-
-        {/* Compact Hero Content - Mobile First */}
-        <div className="relative z-10 w-full max-w-xl mx-auto px-5 text-center py-12">
+      {/* Hero Section */}
+      <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden pt-10 pb-20">
+        <div className="relative z-10 w-full max-w-2xl mx-auto px-6 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 1, ease: "easeOut" }}
           >
-            {/* Smaller icon for mobile */}
-            <Sparkles className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-5 text-primary opacity-70 animate-glow-pulse" />
+            <div className="inline-flex items-center justify-center p-3 bg-white/50 rounded-full mb-6 shadow-sm backdrop-blur-sm">
+              <PenTool className="w-6 h-6 text-primary" />
+            </div>
 
-            {/* Responsive heading - mobile optimized */}
-            <h1 className="font-display text-4xl md:text-6xl font-bold text-navy mb-5 text-glow-strong leading-tight px-4">
-              Sacred Lock Screens
+            <h1 className="font-display text-5xl md:text-7xl font-medium text-navy mb-6 leading-tight tracking-tight">
+              Inspired <span className="text-primary italic">Wallpapers</span>
             </h1>
 
-            <GoldenAccent variant="line" className="mx-auto mb-6 opacity-60 scale-90" />
-
-            {/* Concise tagline for mobile */}
-            <p className="text-lg md:text-xl text-charcoal font-light max-w-md mx-auto leading-relaxed mb-3 px-4">
-              Transform scripture into beautiful phone wallpapers
+            <p className="text-lg md:text-xl text-stone font-light max-w-md mx-auto leading-relaxed mb-8">
+              Transform your favorite quotes and verses into beautiful, organic phone wallpapers.
             </p>
 
-            <p className="text-sm md:text-base text-stone max-w-sm mx-auto leading-relaxed px-6">
-              AI-powered text sizing ensures every verse is perfectly readable
-            </p>
 
-            {/* Sticky CTA - thumb-friendly */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="mt-8"
-            >
-              <a
-                href="#create"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary hover:bg-primary-hover active:scale-95 text-navy font-semibold rounded-xl transition-all shadow-glow-md text-base touch-manipulation"
-              >
-                Begin Creating
-                <Sparkles className="w-4 h-4" />
-              </a>
-            </motion.div>
           </motion.div>
         </div>
-
-        {/* Scroll indicator - subtle on mobile */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden md:block"
-        >
-          <div className="w-5 h-8 border-2 border-primary rounded-full flex items-start justify-center p-1.5 opacity-50">
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              className="w-1 h-1 bg-primary rounded-full"
-            />
-          </div>
-        </motion.div>
       </section>
 
-      {/* Main Content - Mobile-First Cards */}
-      <main id="create" className="max-w-2xl mx-auto px-4 md:px-8 py-10 md:py-16 relative z-10">
+      {/* Main Content */}
+      <main id="create" className="max-w-3xl mx-auto px-4 md:px-8 pb-24 relative z-10">
 
-        {/* Error Display - Mobile Optimized */}
+        {/* Error Display */}
         {error && (
-          <div className="flex items-start gap-2.5 p-3.5 mb-5 bg-error-light border-l-4 border-error rounded-lg text-error text-sm shadow-sm">
+          <div className="flex items-start gap-3 p-4 mb-6 bg-error-light border border-error/20 rounded-xl text-error text-sm">
             <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <span className="leading-snug">{error}</span>
+            <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
-        {/* Step 1: Enter Verse - Minimalist Mobile Card */}
-        <section className="bg-surface rounded-2xl p-5 md:p-7 shadow-sm mb-6 border border-stone-light/30">
-          <div className="mb-5">
-            <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy mb-2 text-center">
-              Your Scripture
+        {/* Step 1: Enter Text */}
+        <section className="bg-surface rounded-3xl p-6 md:p-8 organic-shadow mb-8 border border-stone-light/20">
+          <div className="mb-6 text-center">
+            <h3 className="font-display text-2xl md:text-3xl font-medium text-navy mb-2">
+              Your Inspiration
             </h3>
-            <GoldenAccent variant="line" className="mx-auto mb-3 opacity-40 scale-75" />
+            <OrganicDivider className="opacity-60 scale-75" />
           </div>
 
-          <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2">
-            Verse Text
+          <label className="block text-xs uppercase tracking-wider font-semibold text-stone mb-3 ml-1">
+            Message
           </label>
           <textarea
             value={verse}
             onChange={(e) => setVerse(e.target.value)}
-            placeholder="Paste your favorite verse..."
-            className="w-full min-h-32 p-4 border-2 border-stone-light/50 rounded-xl text-navy text-base placeholder:text-stone/40 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all resize-y bg-surface leading-relaxed touch-manipulation"
+            placeholder="Type a quote, verse, or thought..."
+            className="w-full min-h-40 p-5 border border-stone-light rounded-2xl text-navy text-lg placeholder:text-stone/40 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all resize-y bg-page/50 leading-relaxed font-display"
           />
-          <div className={`text-right text-xs mt-1.5 font-medium ${
-            charCount > 500 ? 'text-error' : charCount > 400 ? 'text-coral' : 'text-stone/60'
-          }`}>
+          <div className={`text-right text-xs mt-2 font-medium ${charCount > 500 ? 'text-error' : charCount > 400 ? 'text-coral' : 'text-stone/60'
+            }`}>
             {charCount}/500
           </div>
 
-          <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2 mt-5">
-            Reference (Optional)
+          <label className="block text-xs uppercase tracking-wider font-semibold text-stone mb-3 mt-6 ml-1">
+            Attribution (Optional)
           </label>
           <input
             type="text"
             value={reference}
             onChange={(e) => setReference(e.target.value)}
-            placeholder="John 3:16"
-            className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base placeholder:text-stone/40 focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all bg-surface touch-manipulation"
+            placeholder="e.g., Marcus Aurelius or John 3:16"
+            className="w-full p-4 border border-stone-light rounded-2xl text-navy text-base placeholder:text-stone/40 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all bg-page/50"
           />
         </section>
 
-        {/* Step 2: Choose Background - Immersive Gallery */}
+        {/* Step 2: Choose Background */}
         <BackgroundGallerySection
           backgrounds={backgrounds}
           selectedBackground={selectedBackground}
           setSelectedBackground={setSelectedBackground}
         />
 
-        {/* Step 3: Device Size - Mobile Minimalist */}
-        <section className="bg-surface rounded-2xl p-5 md:p-7 shadow-sm mb-6 border border-stone-light/30">
-          <div className="mb-4">
-            <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy mb-2 text-center">
-              Device Size
+        {/* Step 3: Device Size */}
+        <section className="bg-surface rounded-3xl p-6 md:p-8 organic-shadow mb-8 border border-stone-light/20">
+          <div className="mb-6 text-center">
+            <h3 className="font-display text-2xl md:text-3xl font-medium text-navy mb-2">
+              Format
             </h3>
-            <GoldenAccent variant="line" className="mx-auto mb-3 opacity-40 scale-75" />
+            <OrganicDivider className="opacity-60 scale-75" />
           </div>
 
-          <select
-            value={selectedPreset}
-            onChange={(e) => setSelectedPreset(e.target.value)}
-            className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium touch-manipulation"
-          >
-            {devicePresets.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.name} ({preset.width} × {preset.height})
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedPreset}
+              onChange={(e) => setSelectedPreset(e.target.value)}
+              className="w-full p-4 border border-stone-light rounded-2xl text-navy text-base bg-page/50 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer"
+            >
+              {devicePresets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name} ({preset.width} × {preset.height})
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-stone">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+          </div>
         </section>
 
-        {/* Generate Button - Full-Width Mobile CTA */}
-        <div className="mb-10">
+        {/* Generate Button */}
+        <div className="mb-12">
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => handleGenerate()}
             disabled={loading || !isValidLength}
-            className="w-full px-6 py-4 bg-primary active:bg-primary-hover text-navy font-display font-bold text-lg rounded-xl transition-all shadow-glow-md disabled:bg-stone-light disabled:text-stone disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2.5 touch-manipulation"
+            className="w-full px-8 py-5 bg-navy hover:bg-charcoal text-white font-medium text-lg rounded-2xl transition-all shadow-lg hover:shadow-xl disabled:bg-stone-light disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-3"
           >
             {loading ? (
               <>
                 <Loader2 className="w-6 h-6 animate-spin" />
-                Creating...
+                Creating Art...
               </>
             ) : (
               <>
-                <Sparkles className="w-6 h-6" />
-                Generate Lock Screen
+                <Sparkles className="w-6 h-6 text-primary" />
+                Generate Wallpaper
               </>
             )}
           </motion.button>
         </div>
 
-        {/* Preview & Adjust - Mobile-Optimized Results */}
+        {/* Preview & Adjust */}
         {generatedImage && (
           <motion.section
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="bg-surface rounded-2xl p-5 md:p-7 shadow-glow-md border border-primary/20"
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="bg-surface rounded-[2.5rem] p-8 md:p-10 organic-shadow border border-stone-light/20"
           >
-            <div className="text-center mb-5">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: "spring", stiffness: 180 }}
-              >
-                <Sparkles className="w-8 h-8 mx-auto mb-3 text-primary opacity-80" />
-              </motion.div>
-              <h3 className="font-display text-2xl font-semibold text-navy mb-1">
-                Your Lock Screen
+            <div className="text-center mb-8">
+              <h3 className="font-display text-3xl font-medium text-navy mb-2">
+                Your Creation
               </h3>
-              <p className="text-xs text-stone uppercase tracking-wide">Customize below</p>
+              <p className="text-stone text-sm">Customize and download</p>
             </div>
 
-            {/* Image Preview - Mobile Centered */}
-            <div className="flex justify-center mb-6">
-              <motion.div
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="bg-stone-light/10 p-3 rounded-xl shadow-lg"
-              >
-                <img
-                  src={generatedImage}
-                  alt="Generated lock screen"
-                  className="max-w-full max-h-[420px] rounded-lg shadow-xl"
-                />
-              </motion.div>
-            </div>
-
-            {/* Font and Size Controls - Mobile Stacked */}
-            <motion.div
-              initial={{ y: 15, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="space-y-5 mb-6"
-            >
-              {/* Font Selector */}
-              <div>
-                <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2">
-                  Font Style
-                </label>
-                <select
-                  value={selectedFont}
-                  onChange={(e) => setSelectedFont(e.target.value)}
-                  className="w-full p-3.5 border-2 border-stone-light/50 rounded-xl text-navy text-base bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all cursor-pointer font-medium touch-manipulation"
-                  style={{ fontFamily: getFontFamily(selectedFont) }}
-                >
-                  {fonts.map((font) => (
-                    <option
-                      key={font.id}
-                      value={font.id}
-                      style={{ fontFamily: getFontFamily(font.id) }}
-                    >
-                      {font.name}
-                    </option>
-                  ))}
-                </select>
+            <div className="grid md:grid-cols-2 gap-10 items-start">
+              {/* Raw Image Preview */}
+              <div className="order-2 md:order-1 flex justify-center">
+                <div className="relative shadow-2xl rounded-lg overflow-hidden border-4 border-white/10 max-w-[300px]">
+                  <img
+                    src={generatedImage}
+                    alt="Generated Wallpaper"
+                    className="w-full h-auto"
+                  />
+                </div>
               </div>
 
-              {/* Font Size Controls - Mobile Thumb-Friendly */}
-              <div>
-                <label className="block text-xs uppercase tracking-wide font-medium text-stone mb-2">
-                  Text Size
-                </label>
-                <div className="flex items-center justify-center gap-3">
-                  <button
-                    onClick={() => adjustFontSize(-5)}
-                    className="w-12 h-12 flex items-center justify-center border-2 border-primary/40 rounded-xl active:bg-primary/10 transition-all text-primary touch-manipulation"
-                  >
-                    <Minus className="w-5 h-5" />
-                  </button>
-                  <div className="flex flex-col items-center">
-                    <input
-                      type="number"
-                      value={fontSize || ''}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (!isNaN(val) && val > 0) {
-                          setFontSize(val);
-                        }
-                      }}
-                      className="w-20 px-3 py-2.5 text-center border-2 border-stone-light/50 rounded-xl text-lg font-semibold text-navy bg-surface focus:outline-none focus:border-primary focus:shadow-glow-sm transition-all touch-manipulation"
-                      placeholder="72"
-                      min="10"
-                      max="200"
-                    />
-                    <span className="text-xs text-stone/60 font-medium mt-1">
-                      px
-                    </span>
+              {/* Controls */}
+              <div className="order-1 md:order-2 space-y-8 pt-4">
+                {/* Font Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-navy/70">Font Style</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {fonts.map(font => (
+                      <button
+                        key={font.id}
+                        onClick={() => setSelectedFont(font.id)}
+                        className={`p-2 text-sm rounded-md border transition-all ${selectedFont === font.id
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-navy border-stone-light hover:border-primary/50'
+                          }`}
+                        style={{ fontFamily: font.name }}
+                      >
+                        {font.name}
+                      </button>
+                    ))}
                   </div>
+                </div>
+
+                {/* AI Layout Toggle */}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-3 p-3 bg-white/50 rounded-lg border border-stone-light/50">
+                    <div className="flex items-center h-5">
+                      <input
+                        id="ai-mode"
+                        type="checkbox"
+                        checked={useAI}
+                        onChange={(e) => setUseAI(e.target.checked)}
+                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                      />
+                    </div>
+                    <div className="ml-3 text-sm">
+                      <label htmlFor="ai-mode" className="font-medium text-navy">Nano Banana AI Layout</label>
+                      <p className="text-stone text-xs">Automatically adjusts size & spacing (Gemini)</p>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Size Controls */}
+                <div>
+                  <label className="block text-xs uppercase tracking-wider font-semibold text-stone mb-3">
+                    Size
+                  </label>
+                  <div className="flex items-center gap-4 bg-page/50 p-2 rounded-2xl border border-stone-light/30">
+                    <button
+                      onClick={() => adjustFontSize(-5)}
+                      className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white transition-colors text-navy"
+                    >
+                      <Minus className="w-5 h-5" />
+                    </button>
+                    <div className="flex-1 text-center font-semibold text-lg text-navy">
+                      {fontSize}px
+                    </div>
+                    <button
+                      onClick={() => adjustFontSize(5)}
+                      className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white transition-colors text-navy"
+                    >
+                      <Plus className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-3 pt-4">
                   <button
-                    onClick={() => adjustFontSize(5)}
-                    className="w-12 h-12 flex items-center justify-center border-2 border-primary/40 rounded-xl active:bg-primary/10 transition-all text-primary touch-manipulation"
+                    onClick={handleDownload}
+                    className="w-full px-6 py-4 bg-primary hover:bg-primary-hover text-white font-medium rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
                   >
-                    <Plus className="w-5 h-5" />
+                    <Download className="w-5 h-5" />
+                    Download
+                  </button>
+                  <button
+                    onClick={handleRegenerate}
+                    disabled={loading}
+                    className="w-full px-6 py-4 border border-stone-light hover:bg-stone-light/10 text-navy font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    Regenerate
                   </button>
                 </div>
               </div>
-            </motion.div>
-
-            {/* Action Buttons - Mobile Stacked Full-Width */}
-            <motion.div
-              initial={{ y: 15, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="flex flex-col gap-3"
-            >
-              <button
-                onClick={handleDownload}
-                className="w-full px-6 py-3.5 bg-primary active:bg-primary-hover text-navy font-semibold rounded-xl shadow-glow-md transition-all flex items-center justify-center gap-2 touch-manipulation"
-              >
-                <Download className="w-5 h-5" />
-                Download Lock Screen
-              </button>
-              <button
-                onClick={handleRegenerate}
-                disabled={loading}
-                className="w-full px-6 py-3.5 border-2 border-teal text-teal font-semibold rounded-xl active:bg-teal-light transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
-              >
-                <RefreshCw className="w-5 h-5" />
-                Regenerate
-              </button>
-            </motion.div>
+            </div>
           </motion.section>
         )}
       </main>
 
-      {/* Footer - Minimal Mobile */}
-      <footer className="relative border-t border-stone-light/20 py-8 mt-16 text-center">
-        <div className="relative">
-          <GoldenAccent variant="circle" className="mx-auto mb-3 opacity-20 scale-75" />
-          <p className="text-xs text-stone/70">
-            © 2025 WhitePine Tech
-          </p>
-        </div>
+      {/* Footer */}
+      <footer className="py-10 text-center text-stone/60 text-sm">
+        <p>© 2025 Inspired Wallpapers</p>
       </footer>
     </div>
   );

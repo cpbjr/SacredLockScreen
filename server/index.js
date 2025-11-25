@@ -5,7 +5,8 @@ const fs = require('fs');
 const satori = require('satori').default;
 const { Resvg } = require('@resvg/resvg-js');
 const sharp = require('sharp');
-
+require('dotenv').config();
+const { calculateOptimalLayout } = require('./ai-service');
 const app = express();
 const PORT = 3001;
 
@@ -20,9 +21,11 @@ if (process.env.NODE_ENV === 'production') {
 
 // Device presets (hardcoded for MVP)
 const devicePresets = [
-  { id: 'iphone-12-pro-max', name: 'iPhone 12 Pro Max', width: 1284, height: 2778, isDefault: true },
-  { id: 'iphone-15-pro-max', name: 'iPhone 15 Pro Max', width: 1290, height: 2796, isDefault: false },
-  { id: 'samsung-galaxy', name: 'Samsung Galaxy', width: 1440, height: 3088, isDefault: false },
+  { id: 'iphone-16-pro-max', name: 'iPhone 16 Pro Max', width: 1320, height: 2868, isDefault: true },
+  { id: 'iphone-15-pro', name: 'iPhone 15 Pro', width: 1179, height: 2556, isDefault: false },
+  { id: 'pixel-8-pro', name: 'Google Pixel 8 Pro', width: 1344, height: 2992, isDefault: false },
+  { id: 'samsung-s24-ultra', name: 'Samsung S24 Ultra', width: 1440, height: 3120, isDefault: false },
+  { id: 'iphone-se', name: 'iPhone SE', width: 750, height: 1334, isDefault: false },
 ];
 
 // Available fonts (curated list - serif + script fonts for scripture)
@@ -208,9 +211,37 @@ async function generateImage(req, res) {
     // Load selected font
     const selectedFontData = loadFontById(fontFamily);
 
-    // Use provided font size or calculate default
-    const verseFontSize = fontSize !== undefined && fontSize !== null ? fontSize : calculateFontSize(verse);
-    const referenceFontSize = Math.round(verseFontSize * 0.68);
+    // AI Layout Calculation
+    let layout = {
+      fontSize: fontSize !== undefined && fontSize !== null ? fontSize : calculateFontSize(verse),
+      lineHeight: 1.4,
+      paddingTop: '10%',
+      paddingBottom: '10%',
+      maxWidth: '80%'
+    };
+
+    if (req.body.useAI) {
+      console.log('Using AI for layout...');
+      const aiLayout = await calculateOptimalLayout(verse, process.env.OPENROUTER_API_KEY);
+      if (aiLayout) {
+        console.log('AI Layout:', aiLayout);
+        // Enforce minimum 25% padding
+        const minPadding = 25;
+        const aiTop = aiLayout.paddingTop || 25;
+        const aiBottom = aiLayout.paddingBottom || 25;
+
+        layout = {
+          fontSize: aiLayout.fontSize,
+          lineHeight: aiLayout.lineHeight || 1.4,
+          paddingTop: `${Math.max(aiTop, minPadding)}%`,
+          paddingBottom: `${Math.max(aiBottom, minPadding)}%`,
+          maxWidth: aiLayout.maxWidth ? `${aiLayout.maxWidth}%` : '80%'
+        };
+      }
+    }
+
+    const verseFontSize = layout.fontSize;
+    const referenceFontSize = Math.round(verseFontSize * 0.58); // Reduced by ~15% from 0.68
 
     // Create text overlay using Satori
     const svg = await satori(
@@ -224,7 +255,10 @@ async function generateImage(req, res) {
             justifyContent: 'center',
             width: '100%',
             height: '100%',
-            padding: '10%',
+            paddingTop: layout.paddingTop,
+            paddingBottom: layout.paddingBottom,
+            paddingLeft: '10%',
+            paddingRight: '10%',
           },
           children: [
             {
@@ -234,9 +268,9 @@ async function generateImage(req, res) {
                   fontSize: verseFontSize,
                   color: 'white',
                   textAlign: 'center',
-                  lineHeight: 1.4,
+                  lineHeight: layout.lineHeight,
                   textShadow: '3px 3px 5px rgba(0,0,0,0.8)',
-                  maxWidth: '80%',
+                  maxWidth: layout.maxWidth,
                   overflow: 'hidden',
                   display: 'flex',
                   flexWrap: 'wrap',

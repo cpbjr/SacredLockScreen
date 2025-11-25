@@ -10,6 +10,9 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+# Test files
+tests/
+
 # Logs
 *.log
 npm-debug.log*
